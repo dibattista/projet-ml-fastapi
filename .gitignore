@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.env
+
+# Poetry
+dist/
+build/
+
+# IDE (VS Code)
+.vscode/
+
+# Ne pas suivre les dossiers de sortie et de données
+data/
+graphiques/
+resultats/
+catboost_info/
