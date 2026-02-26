@@ -1,9 +1,14 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import (
-    create_engine, Column, Integer, Float, 
+    create_engine, Column, Integer, Float,
     String, DateTime, ForeignKey
 )
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
+
+# Charger les variables d'environnement
+load_dotenv()
 
 Base = declarative_base()
 
@@ -65,9 +70,22 @@ class Prediction(Base):
 
 def create_database():
     """Crée la base de données et les tables."""
-    engine = create_engine(
-        "postgresql+psycopg2://postgres:postgres@localhost/attrition_db"
-    )
+    # Récupérer les credentials depuis les variables d'environnement
+    db_user = os.getenv("DB_USER", "postgres")
+    db_password = os.getenv("DB_PASSWORD", "postgres")
+    db_host = os.getenv("DB_HOST", "localhost")
+    db_port = os.getenv("DB_PORT", "5432")
+    db_name = os.getenv("DB_NAME", "attrition_db")
+
+    # Construire l'URL de connexion
+    database_url = f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
+    # D'abord créer l'engine
+    engine = create_engine(database_url)
+
+    # Supprime les anciennes tables si elles existent
+    Base.metadata.drop_all(engine)
+
     Base.metadata.create_all(engine)
     print("Tables 'employees' et 'predictions' créées avec succès !")
 
