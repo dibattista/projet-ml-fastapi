@@ -6,14 +6,18 @@ from database.create_db import Employee, Prediction
 # 1 - Chargement du modèle une seule fois au démarrage
 model = joblib.load("ml_model/model_pipeline.pkl")
 
-# 2 — La fonction d'encodage des variables manuelles :
+
+# 2 — Encodage des variables manuelles
 def encode_employee_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Transforme les données lisibles en format attendu par le modèle."""
+    """
+    Transforme les données lisibles (DB) en format attendu par le pipeline.
+    Reproduit les encodages manuels du notebook P4.
+    """
     df = df.copy()
 
-    # Encodage binaire
-    df["heure_supp_encoded"] = df["heure_supplementaires"].map({"Oui": 1, "Non": 0})
-    df["genre"] = df["genre"].map({"Homme": 0, "Femme": 1})
+    # Encodage binaire (identique au notebook)
+    df["genre_encoded"] = df["genre"].map({"M": 0, "F": 1})
+    df["heure_supp_encoded"] = df["heure_supplementaires"].map({"Non": 0, "Oui": 1})
 
     # Encodage ordinal
     df["frequence_deplacement_encoded"] = df["frequence_deplacement"].map({
@@ -21,33 +25,22 @@ def encode_employee_data(df: pd.DataFrame) -> pd.DataFrame:
     })
 
     # Conversion pourcentage → numérique
-    # (si augmentation_num est encore en string "15 %")
-    if df["augmentation_num"].dtype == object:
-        df["augmentation_num"] = df["augmentation_num"].astype(int)
+    if "augmentation_salaire_precedente" in df.columns:
+        df["augmentation_num"] = (
+            df["augmentation_salaire_precedente"]
+            .str.replace(" %", "", regex=False)
+            .astype(int)
+        )
 
-    return df
+    # Supprimer les colonnes originales (remplacées par les encodées)
+    cols_originales = [
+        "genre", "heure_supplementaires",
+        "frequence_deplacement", "augmentation_salaire_precedente"
+    ]
+    df = df.drop(columns=[c for c in cols_originales if c in df.columns])
 
-# 3 — Le calcul des features engineered (celles créées en P4) :
-def add_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Ajoute les features métier créées dans le Projet 4."""
-    df = df.copy()
-
-    # Junior dans un poste à risque
-    df["feat_junior_poste_risque"] = (
-        (df["annee_experience_totale"] <= 7) &
-        (df["poste"].isin(["Représentant Commercial", "Consultant", "Tech Lead"]))
-    ).astype(int)
-
-    # Commercial avec grande distance domicile
-    df["feat_commercial_distance"] = (
-        (df["poste"].str.contains("Commercial", na=False)) &
-        (df["distance_domicile_travail"] > 20)
-    ).astype(int)
-
-    # Job hopping (change souvent de job)
-    df["job_changing"] = (
-        (df["nombre_experiences_precedentes"] >= 4) &
-        (df["annee_experience_totale"] <= 7)
-    ).astype(int)
+    # Supprimer les colonnes non-features
+    cols_non_features = ["id", "id_employee", "a_quitte_l_entreprise"]
+    df = df.drop(columns=[c for c in cols_non_features if c in df.columns])
 
     return df

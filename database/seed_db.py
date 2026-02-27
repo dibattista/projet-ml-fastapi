@@ -1,16 +1,16 @@
 """
-Insertion des données employees dans la base de données.
-Lit le CSV nettoyé du P4 et insère les 1470 employés.
+Insertion des données dans les 3 tables : sirh, evaluation, sondage.
+Lit les 3 CSV bruts du P4.
 """
 import os
 import pandas as pd
 from sqlalchemy import create_engine
 
 
-def seed_employees():
-    """Insère les données du CSV dans la table employees."""
+def seed_database():
+    """Insère les données des 3 CSV dans les tables."""
 
-    # Connexion à la base
+    # Connexion
     db_user = os.getenv("DB_USER", "postgres")
     db_password = os.getenv("DB_PASSWORD", "postgres")
     db_host = os.getenv("DB_HOST", "localhost")
@@ -20,22 +20,31 @@ def seed_employees():
     database_url = f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
     engine = create_engine(database_url)
 
-    # Lire le CSV nettoyé du P4
-    csv_path = "notebooks/resultats/DiBattista_Barbara_4_csv_resultat_nettoyage_122025.csv"
-    df = pd.read_csv(csv_path)
+    # ============================================
+    # Table 1 : sirh
+    # ============================================
+    df_sirh = pd.read_csv("notebooks/data/extrait_sirh.csv")
+    df_sirh.to_sql("sirh", engine, if_exists="append", index=False)
+    print(f"sirh : {len(df_sirh)} lignes insérées")
 
-    print(f"CSV chargé : {len(df)} lignes, {len(df.columns)} colonnes")
+    # ============================================
+    # Table 2 : evaluation
+    # Conversion eval_number : "E_42" → 42
+    # ============================================
+    df_eval = pd.read_csv("notebooks/data/extrait_eval.csv")
+    df_eval["eval_number"] = df_eval["eval_number"].str.replace("E_", "").astype(int)
+    df_eval.to_sql("evaluation", engine, if_exists="append", index=False)
+    print(f"evaluation : {len(df_eval)} lignes insérées")
 
-    # Insérer dans PostgreSQL
-    df.to_sql(
-        "employees",        # nom de la table
-        engine,
-        if_exists="append", # ajoute sans supprimer
-        index=False         # pas d'index pandas
-    )
+    # ============================================
+    # Table 3 : sondage
+    # ============================================
+    df_sondage = pd.read_csv("notebooks/data/extrait_sondage.csv")
+    df_sondage.to_sql("sondage", engine, if_exists="append", index=False)
+    print(f"sondage : {len(df_sondage)} lignes insérées")
 
-    print(f"{len(df)} employés insérés avec succès !")
+    print("\nToutes les données insérées avec succès !")
 
 
 if __name__ == "__main__":
-    seed_employees()
+    seed_database()
