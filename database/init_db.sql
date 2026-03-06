@@ -72,3 +72,13 @@ CREATE TABLE IF NOT EXISTS predictions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id) REFERENCES sirh(id_employee)
 );
+
+-- ============================================
+-- Table 5 : users (authentification API)
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);

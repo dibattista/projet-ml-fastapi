@@ -16,6 +16,9 @@ from app.schemas import (
     PredictionHistory,
     HistoryResponse,
 )
+from app.auth import get_current_user, authenticate_user, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from fastapi.security import OAuth2PasswordRequestForm
+from datetime import timedelta
 
 app = FastAPI(
     title="Futurisys - API Prédiction Attrition",
@@ -31,6 +34,7 @@ def predict_by_filter(
     heure_supplementaires: Optional[str] = Query(None, alias="heure_sup", description="Oui ou Non"),
     departement: Optional[str] = Query(None, description="Filtrer par département"),
     db: Session = Depends(get_db),
+    current_user = Depends(get_current_user), 
 ):
     """
     Filtre les employés selon des critères,
@@ -86,6 +90,7 @@ def predict_by_filter(
 def predict_by_employee(
     employee_id: int,
     db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
 ):
     """
     Prédit le risque de départ pour un employé spécifique.
@@ -118,6 +123,7 @@ def get_predictions_history(
     limit: int = Query(50, description="Nombre max de résultats"),
     employee_id: Optional[int] = Query(None, description="Filtrer par employé"),
     db: Session = Depends(get_db),
+    current_user = Depends(get_current_user), 
 ):
     """
     Consulte l'historique des prédictions loggées.
@@ -156,3 +162,18 @@ def root():
             "GET /predictions/history",
         ],
     }
+
+# ─── ENDPOINT LOGIN ───
+@app.post("/token")
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Identifiants incorrects")
+    access_token = create_access_token(
+        data={"sub": user.username},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    return {"access_token": access_token, "token_type": "bearer"}

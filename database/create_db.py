@@ -5,7 +5,7 @@ P5 - Création des tables de la base de données.
 import os
 from sqlalchemy import (
     create_engine, Column, Integer, Float,
-    String, DateTime, ForeignKey
+    String, DateTime, ForeignKey, Boolean
 )
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
@@ -89,6 +89,16 @@ class Prediction(Base):
     filter_used = Column(String(100))
     created_at = Column(DateTime, server_default=func.now())  # pylint: disable=not-callable
 
+# ============================================
+# Table 5 : users (authentification API)
+# ============================================
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), unique=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
 
 def create_database():
     """Crée la base de données et les tables."""
