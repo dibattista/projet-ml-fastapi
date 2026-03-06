@@ -1,41 +1,132 @@
 import joblib
 import pandas as pd
 from sqlalchemy.orm import Session
-from database.create_db import Prediction  # le modèle SQLAlchemy de ta table predictions
+from sqlalchemy import text
 
-# Chargement du modèle une seule fois au démarrage
+# 1 - Chargement du modèle une seule fois au démarrage
 model = joblib.load("ml_model/model_pipeline.pkl")
 
-def run_prediction(features: dict, db: Session):
-    # On récupère et retire l'employee_id (pas une feature du modèle)
-    employee_id = features.pop("employee_id")
 
-    # Création du DataFrame pour le modèle
-    df = pd.DataFrame([features])
+# 2 — Jointure des 3 tables sources
+def get_employee_dataframe(db: Session, filters: dict = None, employee_id: int = None) -> pd.DataFrame:
+    """
+    Lit sirh + evaluation + sondage, fait la jointure,
+    et retourne un DataFrame prêt pour l'encodage.
+    """
+    query = """
+        SELECT s.*, e.*, so.*
+        FROM sirh s
+        JOIN evaluation e ON s.id_employee = e.eval_number
+        JOIN sondage so ON s.id_employee = so.code_sondage
+    """
 
-    # Prédiction
-    pred = int(model.predict(df)[0])
-    proba = float(model.predict_proba(df)[0][1])
+    params = {}
 
-    # Sauvegarde en base de données
-    record = Prediction(
-        employee_id=employee_id,
-        prediction=pred,
-        probability=proba,
-        heure_supp_encoded=features["heure_supp_encoded"],
-        nombre_participation_pee=features["nombre_participation_pee"],
-        age=features["age"],
-        annees_sous_responsable_actuel=features["annees_sous_responsable_actuel"],
-        annees_dans_l_entreprise=features["annees_dans_l_entreprise"],
-        revenu_mensuel=features["revenu_mensuel"],
-        annee_experience_totale=features["annee_experience_totale"],
-        feat_junior_poste_risque=features["feat_junior_poste_risque"],
-        distance_domicile_travail=features["distance_domicile_travail"],
-        satisfaction_employee_environnement=features["satisfaction_employee_environnement"],
-        annees_dans_le_poste_actuel=features["annees_dans_le_poste_actuel"],
-        nombre_experiences_precedentes=features["nombre_experiences_precedentes"]
-    )
-    db.add(record)
+    # Filtre par employé unique
+    if employee_id is not None:
+        query += " WHERE s.id_employee = :employee_id"
+        params["employee_id"] = employee_id
+
+    # Filtres dynamiques (ex: poste=Consultant)
+    elif filters:
+        conditions = []
+        for key, value in filters.items():
+            conditions.append(f"s.{key} = :{key}")
+            params[key] = value
+        query += " WHERE " + " AND ".join(conditions)
+
+    result = db.execute(text(query), params)
+    columns = result.keys()
+    rows = result.fetchall()
+
+    return pd.DataFrame(rows, columns=columns)
+
+
+# 3 — Encodage des variables manuelles
+def encode_employee_data(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Transforme les données lisibles (DB) en format attendu par le pipeline.
+    Reproduit les encodages manuels du notebook P4.
+    """
+    df = df.copy()
+
+    # Encodage binaire
+    df["genre_encoded"] = df["genre"].map({"M": 0, "F": 1})
+    df["heure_supp_encoded"] = df["heure_supplementaires"].map({"Non": 0, "Oui": 1})
+
+    # Encodage ordinal
+    df["frequence_deplacement_encoded"] = df["frequence_deplacement"].map({
+        "Aucun": 0, "Occasionnel": 1, "Frequent": 2
+    })
+
+    # Conversion pourcentage → numérique
+    if "augementation_salaire_precedente" in df.columns:
+        df["augmentation_num"] = (
+            df["augementation_salaire_precedente"]
+            .str.replace(" %", "", regex=False)
+            .astype(int)
+        )
+
+    # Supprimer les colonnes originales (remplacées par les encodées)
+    cols_a_supprimer = [
+        "genre", "heure_supplementaires",
+        "frequence_deplacement", "augementation_salaire_precedente",
+        # Clés de jointure en doublon
+        "eval_number", "code_sondage",
+        # Colonnes non-features
+        "a_quitte_l_entreprise",
+        "departement",      # multicolinéarité avec poste (P4)
+        "ayant_enfants",    # valeur unique (P4)
+    ]
+    df = df.drop(columns=[c for c in cols_a_supprimer if c in df.columns])
+
+    return df
+
+
+# 4 — Prédiction
+def predict_employees(df_encoded: pd.DataFrame) -> pd.DataFrame:
+    """
+    Fait la prédiction sur les employés encodés.
+    Retourne le DataFrame avec prediction + probability.
+    """
+    # Sauvegarder id_employee avant de le retirer pour le modèle
+    ids = df_encoded["id_employee"].values
+    df_model = df_encoded.drop(columns=["id_employee"])
+
+    # Prédiction + probabilité
+    predictions = model.predict(df_model)
+    probabilities = model.predict_proba(df_model)[:, 1]  # proba de "Part"
+
+    # Construire le résultat
+    results = pd.DataFrame({
+        "employee_id": ids,
+        "prediction": ["Part" if p == 1 else "Reste" for p in predictions],
+        "probability": probabilities,
+        "risk_level": pd.cut(
+            probabilities,
+            bins=[0, 0.3, 0.5, 0.7, 1.0],
+            labels=["Faible", "Modéré", "Élevé", "Critique"]
+        )
+    })
+
+    return results
+
+
+# 5 — Logger dans la table predictions
+def log_predictions(db: Session, results: pd.DataFrame, filter_used: str = None):
+    """Enregistre les prédictions dans la table predictions."""
+    for _, row in results.iterrows():
+        db.execute(
+            text("""
+                INSERT INTO predictions (employee_id, prediction, probability, risk_level, filter_used)
+                VALUES (:employee_id, :prediction, :probability, :risk_level, :filter_used)
+            """),
+            {
+                "employee_id": int(row["employee_id"]),
+                "prediction": row["prediction"],
+                "probability": float(row["probability"]),
+                "risk_level": str(row["risk_level"]),
+                "filter_used": filter_used
+            }
+        )
     db.commit()
-
-    return pred, proba
