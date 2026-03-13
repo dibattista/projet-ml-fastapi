@@ -17,3 +17,6 @@ data/
 graphiques/
 resultats/
 catboost_info/
+
+# Données pour les testes
+test.db
