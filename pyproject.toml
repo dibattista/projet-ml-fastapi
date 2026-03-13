@@ -49,6 +49,7 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.22"
 bcrypt = "4.0.1"
 pytest = "^9.0.2"
+gradio = "^6.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest-cov = "^7.0.0"
