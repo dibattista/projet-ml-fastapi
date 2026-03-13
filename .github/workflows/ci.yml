@@ -8,7 +8,8 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest       # machine virtuelle GitHub
+    runs-on: ubuntu-latest # machine virtuelle GitHub
+    environment: test       
 
     env:
       SECRET_KEY: ${{ secrets.SECRET_KEY }}   # injecté depuis GitHub Secrets
