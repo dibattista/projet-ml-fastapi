@@ -2,7 +2,7 @@ name: CI — Tests & Couverture
 
 on:
   push:
-    branches: [main, develop]   # déclenché sur push
+    branches: [main, develop, "feature/ci-cd"]   # déclenché sur push
   pull_request:
     branches: [main, develop]   # déclenché sur PR (validation avant merge)
 
