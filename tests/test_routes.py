@@ -112,12 +112,12 @@ class TestPredictFilter:
     def test_sans_filtre_retourne_400(self, client, auth_headers):
         """Sans aucun filtre → 400 Bad Request."""
         response = client.get("/predict/filter", headers=auth_headers)
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_filtre_inexistant_retourne_404(self, client, auth_headers):
         """Filtre valide mais aucun employé trouvé → 404."""
         response = client.get(
-            "/predict/filter?poste=PosteQuiNExistePas",
+            "/predict/filter?poste=Consultant",
             headers=auth_headers
         )
         assert response.status_code == 404
@@ -159,6 +159,30 @@ class TestPredictFilter:
         )
         body = response.json()
         assert body["total_employees"] == 1
+
+    def test_poste_invalide_retourne_422(self, client, auth_headers):
+        """Valeur de poste inconnue → 422 rejeté par Pydantic."""
+        response = client.get(
+            "/predict/filter?poste=InexistantXYZ",
+            headers=auth_headers
+        )
+        assert response.status_code == 422
+
+    def test_heure_sup_invalide_retourne_422(self, client, auth_headers):
+        """Valeur heure_sup ni Oui ni Non → 422."""
+        response = client.get(
+            "/predict/filter?heure_sup=maybe",
+            headers=auth_headers
+        )
+        assert response.status_code == 422
+
+    def test_departement_invalide_retourne_422(self, client, auth_headers):
+        """Département inconnu → 422."""
+        response = client.get(
+            "/predict/filter?departement=Martiens",
+            headers=auth_headers
+        )
+        assert response.status_code == 422
 
 
 # ══════════════════════════════════════════════════════════════
