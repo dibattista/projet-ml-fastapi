@@ -40,7 +40,8 @@ app = FastAPI(
 def predict_by_filter(
     poste: Optional[str] = Query(None),
     heure_sup: Optional[str] = Query(None),
-    departement: Optional[str] = Query(None),
+    nombre_experiences_precedentes: Optional[int] = Query(None),
+    annee_experience_totale: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
@@ -50,17 +51,18 @@ def predict_by_filter(
         "Tech Lead", "Manager", "Senior Manager",
         "Représentant Commercial", "Directeur Technique", "Ressources Humaines"
     }
-    DEPARTEMENTS_VALIDES = {"Consulting", "Commercial", "Ressources Humaines"}
     HEURES_SUP_VALIDES = {"Oui", "Non"}
 
-    if not any([poste, heure_sup, departement]):
-        raise HTTPException(status_code=422, detail="Au moins un filtre requis")
+    if not any([
+        poste,
+        heure_sup,
+        nombre_experiences_precedentes is not None,
+        annee_experience_totale is not None,
+    ]):
+        raise HTTPException(status_code=400, detail="Au moins un filtre requis")
 
     if poste and poste not in POSTES_VALIDES:
         raise HTTPException(status_code=422, detail=f"Poste '{poste}' invalide")
-
-    if departement and departement not in DEPARTEMENTS_VALIDES:
-        raise HTTPException(status_code=422, detail=f"Département '{departement}' invalide")
 
     if heure_sup and heure_sup not in HEURES_SUP_VALIDES:
         raise HTTPException(status_code=422, detail=f"heure_sup '{heure_sup}' invalide. Valeurs : Oui, Non")
@@ -69,7 +71,10 @@ def predict_by_filter(
     filters = {}
     if poste: filters["poste"] = poste
     if heure_sup: filters["heure_supplementaires"] = heure_sup
-    if departement: filters["departement"] = departement
+    if nombre_experiences_precedentes is not None:
+        filters["nombre_experiences_precedentes"] = nombre_experiences_precedentes
+    if annee_experience_totale is not None:
+        filters["annee_experience_totale"] = annee_experience_totale
 
 
     # 1. Jointure des 3 tables + filtre

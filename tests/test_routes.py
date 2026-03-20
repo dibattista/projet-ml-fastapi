@@ -59,7 +59,7 @@ class TestPredictFilter:
     def test_sans_filtre_retourne_400(self, client, auth_headers):
         """Sans aucun filtre → 400 Bad Request."""
         response = client.get("/predict/filter", headers=auth_headers)
-        assert response.status_code == 422
+        assert response.status_code == 400
 
     def test_filtre_inexistant_retourne_404(self, client, auth_headers):
         """Filtre valide mais aucun employé trouvé → 404."""
@@ -122,15 +122,6 @@ class TestPredictFilter:
             headers=auth_headers
         )
         assert response.status_code == 422
-
-    def test_departement_invalide_retourne_422(self, client, auth_headers):
-        """Département inconnu → 422."""
-        response = client.get(
-            "/predict/filter?departement=Martiens",
-            headers=auth_headers
-        )
-        assert response.status_code == 422
-
 
 # ══════════════════════════════════════════════════════════════
 # 3. TESTS DE /predict/employee/{id}
