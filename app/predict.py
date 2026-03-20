@@ -27,6 +27,11 @@ def get_employee_dataframe(db: Session, filters: dict = None, employee_id: int =
         # toutes les autres colonnes restent dans "s" (sirh)
     }
 
+    FILTER_OPERATORS = {
+        "nombre_experiences_precedentes": ">=",
+        "annee_experience_totale": "<=",
+    }
+
     # Filtre par employé unique
     if employee_id is not None:
         query += " WHERE s.id_employee = :employee_id"
@@ -37,7 +42,8 @@ def get_employee_dataframe(db: Session, filters: dict = None, employee_id: int =
         conditions = []
         for key, value in filters.items():
             alias = TABLE_ALIAS.get(key, "s")
-            conditions.append(f"{alias}.{key} = :{key}")
+            op = FILTER_OPERATORS.get(key, "=")
+            conditions.append(f"{alias}.{key} {op} :{key}")
             params[key] = value
         query += " WHERE " + " AND ".join(conditions)
 
