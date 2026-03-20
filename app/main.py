@@ -1,7 +1,15 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from gradio_demo.app import demo
+import gradio as gr
+
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import Optional
+
 
 from app.database import get_db
 from app.predict import (
@@ -30,30 +38,44 @@ app = FastAPI(
 # ─── ENDPOINT 1 : Prédiction par filtre ───
 @app.get("/predict/filter", response_model=PredictionGroupResponse)
 def predict_by_filter(
-    poste: Optional[str] = Query(None, description="Filtrer par poste"),
-    heure_supplementaires: Optional[str] = Query(None, alias="heure_sup", description="Oui ou Non"),
-    departement: Optional[str] = Query(None, description="Filtrer par département"),
+    poste: Optional[str] = Query(None),
+    heure_sup: Optional[str] = Query(None),
+    nombre_experiences_precedentes: Optional[int] = Query(None),
+    annee_experience_totale: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user), 
+    current_user = Depends(get_current_user),
 ):
-    """
-    Filtre les employés selon des critères,
-    puis prédit le risque de départ pour chacun.
-    """
-    # Construire les filtres
-    filters = {}
-    if poste:
-        filters["poste"] = poste
-    if heure_supplementaires:
-        filters["heure_supplementaires"] = heure_supplementaires
-    if departement:
-        filters["departement"] = departement
+    # ── Validation manuelle ──────────────────────────────
+    POSTES_VALIDES = {
+        "Cadre Commercial", "Assistant de Direction", "Consultant",
+        "Tech Lead", "Manager", "Senior Manager",
+        "Représentant Commercial", "Directeur Technique", "Ressources Humaines"
+    }
+    HEURES_SUP_VALIDES = {"Oui", "Non"}
 
-    if not filters:
-        raise HTTPException(
-            status_code=400,
-            detail="Au moins un filtre requis : poste, heure_sup, departement"
-        )
+    if not any([
+        poste,
+        heure_sup,
+        nombre_experiences_precedentes is not None,
+        annee_experience_totale is not None,
+    ]):
+        raise HTTPException(status_code=400, detail="Au moins un filtre requis")
+
+    if poste and poste not in POSTES_VALIDES:
+        raise HTTPException(status_code=422, detail=f"Poste '{poste}' invalide")
+
+    if heure_sup and heure_sup not in HEURES_SUP_VALIDES:
+        raise HTTPException(status_code=422, detail=f"heure_sup '{heure_sup}' invalide. Valeurs : Oui, Non")
+
+    # ── Suite inchangée ──────────────────────────────────
+    filters = {}
+    if poste: filters["poste"] = poste
+    if heure_sup: filters["heure_supplementaires"] = heure_sup
+    if nombre_experiences_precedentes is not None:
+        filters["nombre_experiences_precedentes"] = nombre_experiences_precedentes
+    if annee_experience_totale is not None:
+        filters["annee_experience_totale"] = annee_experience_totale
+
 
     # 1. Jointure des 3 tables + filtre
     df = get_employee_dataframe(db, filters=filters)
@@ -177,3 +199,5 @@ def login(
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+app = gr.mount_gradio_app(app, demo, path="/demo")

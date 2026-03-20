@@ -1,0 +1,40 @@
+# ============================================================
+# requirements.txt — Futurisys API Attrition (P5)
+# Généré depuis pyproject.toml (Poetry)
+# Python 3.11+
+# ============================================================
+
+# === API ===
+fastapi>=0.133.1
+uvicorn[standard]>=0.41.0
+gradio>=6.9.0
+
+# === Base de données ===
+sqlalchemy>=2.0.46
+psycopg2-binary>=2.9.11
+
+# === Authentification ===
+python-jose[cryptography]>=3.5.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.22
+bcrypt==4.0.1
+
+# === Machine Learning ===
+scikit-learn>=1.7.2,<2.0.0
+joblib>=1.5.3
+
+# === Data manipulation ===
+pandas>=2.3.3,<3.0.0
+numpy>=2.3.3,<3.0.0
+
+# === Validation ===
+pydantic>=2.12.5
+
+# === Utilitaires ===
+python-dotenv>=1.1.1,<2.0.0
+requests>=2.32.5,<3.0.0
+
+# === Tests ===
+pytest>=9.0.2
+pytest-cov>=7.0.0
+httpx>=0.23.0

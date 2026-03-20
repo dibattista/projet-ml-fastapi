@@ -1,6 +1,8 @@
 """
 P5 - Gestion de l'authentification JWT
 """
+import os
+from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -13,8 +15,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from database.create_db import User
 
+load_dotenv()
+
 # ─── Configuration JWT ───
-SECRET_KEY = "futurisys-secret-key-p5"
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback-dev-only")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

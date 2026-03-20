@@ -1,3 +1,12 @@
+---
+title: Futurisys Attrition
+emoji: 🏢
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # 🚀 Futurisys - API Prédiction Attrition des Employés (P5)
 
 ## 📋 Présentation du projet

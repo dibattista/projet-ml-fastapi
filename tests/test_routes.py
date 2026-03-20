@@ -15,60 +15,7 @@ Fixtures utilisées depuis conftest.py :
 
 import pytest
 from sqlalchemy import text
-
-
-# ══════════════════════════════════════════════════════════════
-# HELPER : Insérer un employé complet en DB de test
-# ══════════════════════════════════════════════════════════════
-
-def insert_employee(db_session, employee_id=1):
-    """
-    Insère un employé complet dans les 3 tables (sirh, evaluation, sondage).
-    Nécessaire pour tester les endpoints de prédiction.
-    """
-    # Table sirh
-    db_session.execute(text("""
-        INSERT INTO sirh (
-            id_employee, age, genre, revenu_mensuel, statut_marital,
-            departement, poste, nombre_experiences_precedentes,
-            nombre_heures_travailless, annee_experience_totale,
-            annees_dans_l_entreprise, annees_dans_le_poste_actuel
-        ) VALUES (
-            :id, 30, 'M', 5000, 'Celibataire',
-            'Consulting', 'Consultant', 2,
-            40, 5, 3, 2
-        )
-    """), {"id": employee_id})
-
-    # Table evaluation
-    db_session.execute(text("""
-        INSERT INTO evaluation (
-            eval_number, satisfaction_employee_environnement,
-            note_evaluation_precedente, niveau_hierarchique_poste,
-            satisfaction_employee_nature_travail, satisfaction_employee_equipe,
-            satisfaction_employee_equilibre_pro_perso, note_evaluation_actuelle,
-            heure_supplementaires, augementation_salaire_precedente
-        ) VALUES (
-            :id, 3, 3, 2, 3, 3, 3, 3, 'Non', '10 %'
-        )
-    """), {"id": employee_id})
-
-    # Table sondage
-    db_session.execute(text("""
-        INSERT INTO sondage (
-            code_sondage, a_quitte_l_entreprise, nombre_participation_pee,
-            nb_formations_suivies, nombre_employee_sous_responsabilite,
-            distance_domicile_travail, niveau_education, domaine_etude,
-            ayant_enfants, frequence_deplacement,
-            annees_depuis_la_derniere_promotion, annes_sous_responsable_actuel
-        ) VALUES (
-            :id, 'Non', 2, 2, 0, 10, 3, 'Informatique',
-            'Y', 'Occasionnel', 1, 2
-        )
-    """), {"id": employee_id})
-
-    db_session.commit()
-
+from conftest import insert_employee
 
 # ══════════════════════════════════════════════════════════════
 # 1. TESTS DE LA ROUTE RACINE /
@@ -117,7 +64,7 @@ class TestPredictFilter:
     def test_filtre_inexistant_retourne_404(self, client, auth_headers):
         """Filtre valide mais aucun employé trouvé → 404."""
         response = client.get(
-            "/predict/filter?poste=PosteQuiNExistePas",
+            "/predict/filter?poste=Consultant",
             headers=auth_headers
         )
         assert response.status_code == 404
@@ -160,6 +107,21 @@ class TestPredictFilter:
         body = response.json()
         assert body["total_employees"] == 1
 
+    def test_poste_invalide_retourne_422(self, client, auth_headers):
+        """Valeur de poste inconnue → 422 rejeté par Pydantic."""
+        response = client.get(
+            "/predict/filter?poste=InexistantXYZ",
+            headers=auth_headers
+        )
+        assert response.status_code == 422
+
+    def test_heure_sup_invalide_retourne_422(self, client, auth_headers):
+        """Valeur heure_sup ni Oui ni Non → 422."""
+        response = client.get(
+            "/predict/filter?heure_sup=maybe",
+            headers=auth_headers
+        )
+        assert response.status_code == 422
 
 # ══════════════════════════════════════════════════════════════
 # 3. TESTS DE /predict/employee/{id}
