@@ -221,7 +221,7 @@ with gr.Blocks(title="Futurisys — Prédiction Attrition") as demo:
 
         filter_btn.click(
             fn=predict_filter,
-            inputs=[poste_dd, nb_exp_slider, annee_exp_slider, heure_dd, username_state],
+            inputs=[poste_dd, heure_dd, nb_exp_slider, annee_exp_slider, username_state],
             outputs=[filter_summary, filter_table],
         )
 
