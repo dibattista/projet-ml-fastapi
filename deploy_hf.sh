@@ -10,8 +10,13 @@ echo "🚀 Déploiement HF depuis '$BRANCH_SOURCE'..."
 git checkout --orphan hf-deploy
 git rm -rf .
 
+cp ml_model/model_pipeline.pkl /tmp/model_pipeline.pkl
+
 git checkout "$BRANCH_SOURCE" -- app/ gradio_demo/ ml_model/ database/ Dockerfile requirements.txt
-git lfs pull --include="ml_model/"
+
+# Restaurer le vrai fichier binaire (remplace le pointeur LFS)
+cp /tmp/model_pipeline.pkl ml_model/model_pipeline.pkl
+
 
 cat > README.md << 'EOF'
 ---
