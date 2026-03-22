@@ -29,7 +29,10 @@ pinned: false
 ---
 EOF
 
-git add app/ gradio_demo/ ml_model/ database/ Dockerfile requirements.txt README.md
+# Déclarer le pkl comme fichier LFS pour HF
+git lfs track "*.pkl"
+
+git add .gitattributes app/ gradio_demo/ ml_model/ database/ Dockerfile requirements.txt README.md
 git commit -m "deploy: $(date +%Y-%m-%d) from $BRANCH_SOURCE"
 git push hf hf-deploy:main --force
 
