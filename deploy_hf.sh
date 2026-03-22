@@ -11,6 +11,7 @@ git checkout --orphan hf-deploy
 git rm -rf .
 
 git checkout "$BRANCH_SOURCE" -- app/ gradio_demo/ ml_model/ database/ Dockerfile requirements.txt
+git lfs pull --include="ml_model/"
 
 cat > README.md << 'EOF'
 ---
