@@ -264,7 +264,6 @@ class TestImpactHeuresSup:
             f"(attendu > 0.02 selon analyse SHAP P4)"
         )
 
-
 # ══════════════════════════════════════════════════════════════
 # FAMILLE 3 - SCÉNARIOS UTILISATEUR (RH)
 # ══════════════════════════════════════════════════════════════
@@ -360,3 +359,114 @@ class TestScenarioUtilisateur:
         """
         response = client.get("/predict/filter?poste=Consultant")
         assert response.status_code == 401
+
+# ══════════════════════════════════════════════════════════════
+# FAMILLE 4 - SEUIL JOB_CHANGING
+# ══════════════════════════════════════════════════════════════
+
+class TestSeuilJobChanging:
+    """
+    Vérifie que le modèle réagit au profil "job changer" :
+    nombre_experiences_precedentes >= 4 ET annee_experience_totale <= 6.
+
+    Ce profil indique quelqu'un qui change souvent d'emploi rapidement.
+    Fondé sur la feature engineerée job_changing du P4.
+    """
+
+    def test_job_changer_proba_plus_elevee(self):
+        """
+        Un profil job_changer doit avoir une proba de départ
+        plus élevée qu'un profil stable (peu d'expériences, beaucoup d'années).
+        """
+        df_job_changer = make_employee_df(
+            nombre_experiences_precedentes=5,
+            annee_experience_totale=5,
+        )
+        df_stable = make_employee_df(
+            nombre_experiences_precedentes=1,
+            annee_experience_totale=15,
+        )
+
+        prob_changer = get_probability(df_job_changer)
+        prob_stable = get_probability(df_stable)
+
+        assert prob_changer > prob_stable, (
+            f"Le profil job_changer devrait avoir une proba plus élevée "
+            f"(changer={prob_changer:.3f}, stable={prob_stable:.3f})"
+        )
+
+    def test_seuil_experiences_precedentes(self):
+        """
+        Augmenter nombre_experiences_precedentes de 2 à 5
+        doit augmenter la probabilité de départ.
+        """
+        df_peu = make_employee_df(nombre_experiences_precedentes=2)
+        df_beaucoup = make_employee_df(nombre_experiences_precedentes=5)
+
+        prob_peu = get_probability(df_peu)
+        prob_beaucoup = get_probability(df_beaucoup)
+
+        assert prob_beaucoup > prob_peu, (
+            f"Plus d'expériences précédentes devrait augmenter la proba "
+            f"(peu={prob_peu:.3f}, beaucoup={prob_beaucoup:.3f})"
+        )
+
+
+# ══════════════════════════════════════════════════════════════
+# FAMILLE 5 - FEATURE JUNIOR POSTE RISQUE
+# ══════════════════════════════════════════════════════════════
+
+class TestJuniorPosteRisque:
+    """
+    Vérifie que la combinaison poste à risque + peu d'expérience
+    génère une probabilité de départ plus élevée.
+
+    Fondé sur feat_junior_poste_risque visible dans le SHAP Waterfall P4.
+    Postes à risque identifiés : Représentant Commercial, Consultant.
+    """
+
+    def test_junior_poste_risque_vs_senior(self):
+        """
+        Junior (peu d'années) sur poste à risque vs senior même poste
+        → le junior doit avoir une proba plus élevée.
+        """
+        df_junior = make_employee_df(
+            poste="Représentant Commercial",
+            annee_experience_totale=2,
+            annees_dans_l_entreprise=1,
+        )
+        df_senior = make_employee_df(
+            poste="Représentant Commercial",
+            annee_experience_totale=15,
+            annees_dans_l_entreprise=10,
+        )
+
+        prob_junior = get_probability(df_junior)
+        prob_senior = get_probability(df_senior)
+
+        assert prob_junior > prob_senior, (
+            f"Junior poste risque devrait avoir proba plus élevée "
+            f"(junior={prob_junior:.3f}, senior={prob_senior:.3f})"
+        )
+
+    def test_poste_risque_vs_poste_stable(self):
+        """
+        Même profil junior : poste à risque vs poste stable (Manager)
+        → le poste à risque doit générer plus de proba de départ.
+        """
+        df_risque = make_employee_df(
+            poste="Représentant Commercial",
+            annee_experience_totale=2,
+        )
+        df_stable = make_employee_df(
+            poste="Manager",
+            annee_experience_totale=2,
+        )
+
+        prob_risque = get_probability(df_risque)
+        prob_stable = get_probability(df_stable)
+
+        assert prob_risque > prob_stable, (
+            f"Poste à risque devrait avoir proba plus élevée "
+            f"(risque={prob_risque:.3f}, stable={prob_stable:.3f})"
+        )
