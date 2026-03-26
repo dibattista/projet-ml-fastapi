@@ -62,6 +62,7 @@
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">Licence</a></li>
     <li><a href="#contact">Contact</a></li>
+    <li><a href="#documentation">Documentation</a></li>
     <li><a href="#acknowledgments">Remerciements</a></li>
   </ol>
 </details>
@@ -449,7 +450,7 @@ git checkout ma-branche && git branch -D hf-deploy
 - [x] Démo Gradio sur Hugging Face Spaces
 - [x] Tests fonctionnels comportementaux (job_changing, junior_poste_risque, heures sup)
 - [x] README complet
-- [ ] Documentation technique MkDocs
+- [x] Documentation technique MkDocs
 - [ ] Dashboard monitoring (data drift)
 - [ ] Rate limiting sur les endpoints
 
@@ -493,6 +494,26 @@ Lien projet : [https://github.com/dibattista/projet-ml-fastapi](https://github.c
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
+<!-- DOCUMENTATION -->
+## Documentation
+
+La documentation technique complète est disponible via MkDocs :
+```bash
+# Lancer la doc en local
+mkdocs serve
+# → http://localhost:8000/projet-ml-fastapi/
+```
+
+| Page | Contenu |
+|------|---------|
+| [Accueil](docs/index.md) | Architecture globale, stack technique |
+| [Installation](docs/installation.md) | Local, Supabase, HF Spaces |
+| [API Reference](docs/api.md) | Endpoints, exemples curl, codes HTTP |
+| [Modèle ML](docs/modele.md) | Random Forest, GridSearch, features |
+| [Tests](docs/tests.md) | Couverture 91%, organisation |
+| [CI/CD](docs/cicd.md) | GitHub Actions, orphan branch, Git Flow |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
