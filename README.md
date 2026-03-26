@@ -71,7 +71,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Futurisys API Screenshot][product-screenshot]](https://barbaradi-futurisys-attrition.hf.space/demo)
+[![Futurisys Demo][product-screenshot]](https://barbaradi-futurisys-attrition.hf.space/demo)
 
 **Contexte :** TechNova Partners, une ESN de 1 000+ employés, fait face à un **taux de démission de 16%**. Le coût de remplacement estimé par départ dépasse 6 mois de salaire.
 
@@ -167,6 +167,16 @@
    git remote -v # confirmer le changement
    ```
 
+8. Ajouter les captures d'écran (optionnel, pour le README)
+   ```sh
+   mkdir -p images
+   # → copier dans images/screenshot.png  : capture de la démo Gradio (filtres + résultats)
+   # → copier dans images/swagger.png     : capture du Swagger UI http://localhost:8000/docs
+   # → copier dans images/logo.png        : logo du projet (80x80px)
+   git add images/
+   git commit -m "docs: add screenshots"
+   ```
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -185,7 +195,13 @@ curl -X POST "http://localhost:8000/token" \
 Réponse → utiliser `access_token` dans le header de toutes les requêtes :
 ```
 Authorization: Bearer <votre_token>
+
 ```
+### Aperçu de l'interface
+
+| Démo Gradio | Swagger UI |
+|-------------|-----------|
+| [![Demo][product-screenshot]](https://barbaradi-futurisys-attrition.hf.space/demo) | [![Swagger][swagger-screenshot]](http://localhost:8000/docs) |
 
 ### 2. Prédiction par filtre — `GET /predict/filter`
 
@@ -266,19 +282,28 @@ projet-ml-fastapi/
 └── README.md
 ```
 
-### Base de données (4 tables)
+### Base de données (5 tables)
 
 ```
+┌──────────────────────────────────┐
+│  USERS (authentification API)    │
+│  id PK | username                │
+│  hashed_password | is_active     │
+└──────────────────────────────────┘
+
 SIRH ──────┐
            ├── jointure sur id_employee
 EVALUATION ┤
-           │                     ┌─────────────────────────────────┐
-SONDAGE ───┘                     │ PREDICTIONS (logging API)        │
-                                 │ employee_id | prediction         │
-                                 │ probability | filter_used (JSON) │
-                                 │ created_at                       │
-                                 └─────────────────────────────────┘
+           │                     ┌──────────────────────────────────┐
+SONDAGE ───┘── 1 employé         │ PREDICTIONS (logging API)         │
+               a N predictions ──▶ id PK | employee_id FK            │
+                                 │ prediction | probability          │
+                                 │ risk_level | filter_used (JSON)   │
+                                 │ created_at                        │
+                                 └──────────────────────────────────┘
 ```
+
+> **Note SQL :** `heure_supplementaires` appartient à la table `evaluation` (alias `e.`), pas à `sirh`.
 
 ### Choix techniques justifiés
 
@@ -365,6 +390,20 @@ pytest tests/test_functional.py -v
 | `test_predict.py` | Unitaire | Fonctions ML — `encode_employee_data`, `predict_employees` |
 | `test_functional.py` | Fonctionnel | Comportement métier — seuil `job_changing`, `feat_junior_poste_risque`, impact heures sup |
 
+### Couverture — 91% (71 tests passants)
+
+| Fichier | Statements | Couverture |
+|---------|-----------|-----------|
+| `app/auth.py` | 48 | 96% |
+| `app/main.py` | 76 | 97% |
+| `app/predict.py` | 44 | 100% |
+| `app/schemas.py` | 72 | 82% |
+| `app/features.py` | 29 | 79% |
+| `app/database.py` | 20 | 50% |
+| **Total** | **291** | **91%** |
+
+> `app/database.py` à 50% : la fonction `get_db` n'est pas appelée directement en CI (SQLite in-memory injecté via fixtures). Ce n'est pas un défaut de test — c'est une contrainte d'architecture CI/CD volontaire.
+
 > **CI :** les tests utilisent SQLite in-memory — aucune dépendance PostgreSQL dans le pipeline.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -404,7 +443,7 @@ git checkout ma-branche && git branch -D hf-deploy
 
 - [x] API FastAPI avec endpoints prédiction + historique
 - [x] Authentification JWT sécurisée
-- [x] Base de données PostgreSQL (4 tables)
+- [x] Base de données PostgreSQL (5 tables)
 - [x] Tests unitaires & fonctionnels
 - [x] Pipeline CI/CD GitHub Actions
 - [x] Démo Gradio sur Hugging Face Spaces
@@ -447,7 +486,7 @@ Distribué sous licence MIT. Voir `LICENSE.txt` pour plus d'informations.
 
 **Barbara Di Battista** — Étudiante AI Engineering (OpenClassrooms)
 
-[![LinkedIn][linkedin-shield]][barbara-di-battista]
+[![LinkedIn][linkedin-shield]][linkedin-url]
 
 Lien projet : [https://github.com/dibattista/projet-ml-fastapi](https://github.com/dibattista/projet-ml-fastapi)
 
@@ -482,7 +521,6 @@ Lien projet : [https://github.com/dibattista/projet-ml-fastapi](https://github.c
 [license-url]: https://github.com/dibattista/projet-ml-fastapi/blob/main/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/barbara-di-battista
-[product-screenshot]: images/screenshot.png
 
 [FastAPI-badge]: https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white
 [FastAPI-url]: https://fastapi.tiangolo.com
@@ -500,3 +538,5 @@ Lien projet : [https://github.com/dibattista/projet-ml-fastapi](https://github.c
 [GHA-url]: https://github.com/features/actions
 [HF-badge]: https://img.shields.io/badge/🤗_Hugging_Face-FFD21E?style=for-the-badge
 [HF-url]: https://huggingface.co/spaces/barbaradi/futurisys-attrition
+[product-screenshot]: images/HF-app.png
+[swagger-screenshot]: images/swagger.png
