@@ -18,6 +18,8 @@ graphiques/
 resultats/
 catboost_info/
 noteboooks/
+site/
+
 
 # Données pour les testes
 test.db

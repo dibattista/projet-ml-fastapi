@@ -1,283 +1,563 @@
----
-title: Futurisys Attrition
-emoji: 🏢
-colorFrom: blue
-colorTo: green
-sdk: docker
-pinned: false
----
+<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
+<a id="readme-top"></a>
 
-# 🚀 Futurisys - API Prédiction Attrition des Employés (P5)
+<!-- PROJECT SHIELDS -->
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+[![LinkedIn][linkedin-shield]][linkedin-url]
 
-## 📋 Présentation du projet
 
-**Contexte :** TechNova Partners, une ESN, fait face à un taux de démission de 16%.  
-Ce projet déploie le modèle Random Forest entraîné en P4 sous forme d'**API REST** accessible par les équipes RH.
 
-**Objectif :** Fournir un POC (Proof of Concept) fonctionnel permettant de :
-- Prédire le risque de départ d'un employé ou d'un groupe filtré
-- Consulter l'historique des prédictions
-- Sécuriser l'accès via authentification JWT
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/dibattista/projet-ml-fastapi">
+    <img src="images/logo-P5.png" alt="Logo" width="80" height="80">
+  </a>
 
-**Modèle embarqué :** Random Forest optimisé — Recall 61.7% / F1-Score 50.0%
+  <h3 align="center">Futurisys — API Prédiction d'Attrition des Employés</h3>
 
----
+  <p align="center">
+    Une API REST sécurisée qui déploie un modèle Random Forest pour détecter le risque de départ des employés chez TechNova Partners.
+    <br />
+    <a href="http://localhost:8000/docs"><strong>📖 Swagger UI »</strong></a>
+    <br />
+    <br />
+    <a href="https://barbaradi-futurisys-attrition.hf.space/demo">🎮 Démo en ligne</a>
+    &middot;
+    <a href="https://github.com/dibattista/projet-ml-fastapi/issues/new?labels=bug&template=bug-report---.md">🐛 Signaler un bug</a>
+    &middot;
+    <a href="https://github.com/dibattista/projet-ml-fastapi/issues/new?labels=enhancement&template=feature-request---.md">💡 Proposer une feature</a>
+  </p>
+</div>
 
-## 🛠️ Stack Technique
 
-| Composant | Technologie |
-|-----------|-------------|
-| **API** | FastAPI 0.11x |
-| **Base de données** | PostgreSQL + SQLAlchemy |
-| **Authentification** | JWT (python-jose) + bcrypt (passlib) |
-| **Modèle ML** | scikit-learn / joblib |
-| **Gestion dépendances** | Poetry + Python 3.12 |
-| **Tests** | Pytest + pytest-cov |
-| **CI/CD** | GitHub Actions |
 
----
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>📋 Table des matières</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">À propos du projet</a>
+      <ul>
+        <li><a href="#built-with">Stack technique</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Démarrage rapide</a>
+      <ul>
+        <li><a href="#prerequisites">Prérequis</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Utilisation & Exemples</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#ml-model">Modèle ML & Performances</a></li>
+    <li><a href="#tests">Tests</a></li>
+    <li><a href="#cicd">CI/CD</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">Licence</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#documentation">Documentation</a></li>
+    <li><a href="#acknowledgments">Remerciements</a></li>
+  </ol>
+</details>
 
-## 📁 Structure du Projet
 
-```
-p5-futurisys-api/
-├── app/
-│   ├── main.py              # Endpoints FastAPI
-│   ├── auth.py              # Authentification JWT
-│   ├── database.py          # Connexion SQLAlchemy
-│   ├── predict.py           # Logique de prédiction ML
-│   └── schemas.py           # Modèles Pydantic
-├── database/
-│   ├── create_db.py         # Création des tables + modèles ORM
-│   └── init_data.py         # Script d'insertion des données initiales
-├── ml_model/
-│   └── model_pipeline.pkl   # Modèle sérialisé (joblib)
-├── tests/
-│   ├── test_api.py          # Tests fonctionnels des endpoints
-│   ├── test_auth.py         # Tests authentification
-│   └── test_db.py           # Tests intégrité base de données
-├── .github/
-│   └── workflows/
-│       └── ci.yml           # Pipeline GitHub Actions
-├── .env.example             # Template variables d'environnement
-├── pyproject.toml           # Dépendances Poetry
-└── README.md
-```
 
----
+<!-- ABOUT THE PROJECT -->
+## About The Project
 
-## 🗄️ Architecture de la Base de Données
+[![Futurisys Demo][product-screenshot]](https://barbaradi-futurisys-attrition.hf.space/demo)
 
-La base PostgreSQL `attrition_db` contient **4 tables** :
+**Contexte :** TechNova Partners, une ESN de 1 000+ employés, fait face à un **taux de démission de 16%**. Le coût de remplacement estimé par départ dépasse 6 mois de salaire.
 
-```
-sirh          → données RH (poste, salaire, ancienneté...)
-evaluation    → notes de performance et satisfaction
-sondage       → questionnaire bien-être annuel
-predictions   → logging des prédictions effectuées via l'API
-```
+**Solution :** Ce projet déploie le modèle **Random Forest** entraîné en P4 sous forme d'**API REST sécurisée**. Il permet aux équipes RH de :
 
-**Jointure :** Les tables `sirh`, `evaluation` et `sondage` sont jointes sur `id_employee`.  
-**Logging :** Chaque appel de prédiction est enregistré dans la table `predictions` avec : `employee_id`, `prediction`, `probability`, `filter_used`, `created_at`.
+* 🔮 Prédire le risque de départ d'un employé individuel ou d'un groupe filtré
+* 📊 Consulter l'historique de toutes les prédictions (logging en base de données)
+* 🔐 Accéder de façon sécurisée via authentification JWT
+* 🎮 Utiliser une interface no-code via la démo Gradio
 
-### Initialiser la base de données
+> **Périmètre POC :** L'API opère sur les employés existants stockés en base. Elle filtre, prédit, et logue. Elle n'accepte pas de nouvelles saisies d'employés (hors scope P5).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+### Built With
+
+* [![FastAPI][FastAPI-badge]][FastAPI-url]
+* [![Python][Python-badge]][Python-url]
+* [![PostgreSQL][PostgreSQL-badge]][PostgreSQL-url]
+* [![scikit-learn][sklearn-badge]][sklearn-url]
+* [![Pytest][Pytest-badge]][Pytest-url]
+* [![Docker][Docker-badge]][Docker-url]
+* [![GitHub Actions][GHA-badge]][GHA-url]
+* [![Hugging Face][HF-badge]][HF-url]
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- GETTING STARTED -->
+## Getting Started
+
+### Prerequisites
+
+* Python 3.12+
+* Poetry — gestionnaire de dépendances
+  ```sh
+  curl -sSL https://install.python-poetry.org | python3 -
+  ```
+* PostgreSQL (en local ou via Docker)
+  ```sh
+  python --version   # >= 3.12
+  poetry --version
+  psql --version
+  ```
+
+### Installation
+
+1. Cloner le dépôt
+   ```sh
+   git clone https://github.com/dibattista/projet-ml-fastapi.git
+   cd projet-ml-fastapi
+   ```
+2. Installer les dépendances
+   ```sh
+   poetry install
+   poetry shell
+   ```
+3. Configurer les variables d'environnement
+   ```sh
+   cp .env.example .env
+   ```
+4. Éditer `.env` avec vos valeurs
+   ```env
+   # Base de données
+   DATABASE_URL=postgresql://user:password@localhost:5432/attrition_db
+
+   # JWT — générer une clé : python -c "import secrets; print(secrets.token_hex(32))"
+   SECRET_KEY=votre-cle-secrete-longue-et-aleatoire
+   ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   ```
+   > ⚠️ Ne jamais committer le fichier `.env` — il est dans `.gitignore`
+
+5. Initialiser la base de données
+   ```sh
+   python database/create_db.py
+   python database/init_data.py
+   ```
+6. Lancer l'API
+   ```sh
+   uvicorn app.main:app --reload
+   ```
+   * API : `http://localhost:8000`
+   * Swagger UI : `http://localhost:8000/docs`
+   * ReDoc : `http://localhost:8000/redoc`
+
+7. Mettre à jour l'URL remote Git
+   ```sh
+   git remote set-url origin https://github.com/dibattista/projet-ml-fastapi.git
+   git remote -v # confirmer le changement
+   ```
+
+8. Ajouter les captures d'écran (optionnel, pour le README)
+   ```sh
+   mkdir -p images
+   # → copier dans images/screenshot.png  : capture de la démo Gradio (filtres + résultats)
+   # → copier dans images/swagger.png     : capture du Swagger UI http://localhost:8000/docs
+   # → copier dans images/logo.png        : logo du projet (80x80px)
+   git add images/
+   git commit -m "docs: add screenshots"
+   ```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- USAGE EXAMPLES -->
+## Usage
+
+### 1. Authentification (obligatoire)
 
 ```bash
-# Créer les tables
-python database/create_db.py
-
-# Insérer les données
-python database/init_data.py
-```
-
----
-
-## 🚀 Installation
-
-### Prérequis
-
-- Python 3.12+
-- Poetry ([installation](https://python-poetry.org/docs/#installation))
-- PostgreSQL (en local ou via Docker)
-
-### Étapes d'installation
-
-```bash
-# 1. Cloner le projet
-git clone <url-du-repo>
-cd p5-futurisys-api
-
-# 2. Installer les dépendances
-poetry install
-
-# 3. Activer l'environnement
-poetry shell
-
-# 4. Configurer les variables d'environnement
-cp .env.example .env
-# Éditer le fichier .env avec vos valeurs
-```
-
-### Variables d'environnement (`.env`)
-
-```env
-# Base de données
-DATABASE_URL=postgresql://user:password@localhost:5432/attrition_db
-
-# JWT - IMPORTANT : changer en production !
-SECRET_KEY=votre-cle-secrete-longue-et-aleatoire
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-```
-
-> ⚠️ **Ne jamais committer le fichier `.env`** — il est dans `.gitignore`
-
----
-
-## 💻 Lancer l'API
-
-```bash
-# Depuis la racine du projet (env activé)
-uvicorn app.main:app --reload
-
-# L'API est disponible sur :
-# → http://localhost:8000
-# → http://localhost:8000/docs  (Swagger UI)
-# → http://localhost:8000/redoc (ReDoc)
-```
-
----
-
-## 🔐 Authentification
-
-L'API utilise **OAuth2 avec JWT (Bearer Token)**.
-
-### Fonctionnement
-
-1. L'utilisateur appelle `POST /token` avec ses identifiants
-2. L'API retourne un `access_token` JWT (valide 30 min)
-3. L'utilisateur inclut ce token dans le header de chaque requête : `Authorization: Bearer <token>`
-
-### Endpoints publics (sans authentification)
-- `GET /` — health check
-- `POST /token` — obtenir un token
-
-### Endpoints protégés (token requis)
-- `GET /predict/filter`
-- `GET /predict/employee/{id}`
-- `GET /predictions/history`
-
-### Exemple d'utilisation
-
-```bash
-# 1. Obtenir un token
 curl -X POST "http://localhost:8000/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=admin&password=secret"
-
-# 2. Utiliser le token
-curl -X GET "http://localhost:8000/predict/filter?poste=Consultant" \
-  -H "Authorization: Bearer <votre_token>"
 ```
 
----
+Réponse → utiliser `access_token` dans le header de toutes les requêtes :
+```
+Authorization: Bearer <votre_token>
 
-## 🔒 Sécurité
+```
+### Aperçu de l'interface
 
-| Pratique | Implémentation |
-|----------|---------------|
-| **Hachage mots de passe** | bcrypt via `passlib` — jamais stockés en clair |
-| **Tokens JWT** | Signés avec `HS256`, expiration configurable |
-| **Secrets** | Variables d'environnement via `.env` (non commité) |
-| **Validation données** | Schémas Pydantic sur tous les endpoints |
-| **Erreurs HTTP** | 401 (non authentifié), 403 (non autorisé), 404, 422 |
+| Démo Gradio | Swagger UI |
+|-------------|-----------|
+| [![Demo][product-screenshot]](https://barbaradi-futurisys-attrition.hf.space/demo) | [![Swagger][swagger-screenshot]](http://localhost:8000/docs) |
 
-> ⚠️ **En production :** remplacer `SECRET_KEY` par une clé aléatoire longue (min 32 chars) et utiliser HTTPS.
+### 2. Prédiction par filtre — `GET /predict/filter`
 
----
+Au moins un filtre requis (sinon `400 Bad Request`).
 
-## 📡 Endpoints de l'API
+| Paramètre | Type | Exemple |
+|-----------|------|---------|
+| `poste` | string | `Consultant` |
+| `heure_supplementaires` | `Oui`/`Non` | `Oui` |
+| `nombre_experiences_precedentes` | int (min ≥) | `4` |
+| `annee_experience_totale` | int (max ≤) | `6` |
 
-### `GET /predict/filter`
-Filtre les employés et prédit leur risque de départ.
+```bash
+curl -X GET "http://localhost:8000/predict/filter?poste=Consultant&heure_supplementaires=Oui" \
+  -H "Authorization: Bearer <token>"
+```
 
-| Paramètre | Type | Description |
-|-----------|------|-------------|
-| `poste` | string (optionnel) | Ex: `Consultant` |
-| `heure_sup` | string (optionnel) | `Oui` ou `Non` |
-| `departement` | string (optionnel) | Ex: `Commercial` |
+### 3. Prédiction individuelle — `GET /predict/employee/{id}`
 
-> Au moins un filtre est requis.
+```bash
+curl -X GET "http://localhost:8000/predict/employee/42" \
+  -H "Authorization: Bearer <token>"
+```
 
-**Réponse :**
+Réponse :
 ```json
 {
-  "filter_used": "poste=Consultant",
-  "total_employees": 12,
-  "total_at_risk": 3,
-  "risk_rate": 25.0,
-  "predictions": [...]
+  "employee_id": 42,
+  "prediction": "Part",
+  "probability": 0.73,
+  "risk_level": "Élevé"
 }
 ```
 
-### `GET /predict/employee/{employee_id}`
-Prédit le risque pour un employé spécifique.
-
-### `GET /predictions/history`
-Consulte l'historique des prédictions loggées.
-
-| Paramètre | Type | Description |
-|-----------|------|-------------|
-| `limit` | int | Nombre max de résultats (défaut: 50) |
-| `employee_id` | int (optionnel) | Filtrer par employé |
-
----
-
-## 🧪 Tests
+### 4. Historique — `GET /predictions/history`
 
 ```bash
-# Lancer tous les tests
+curl -X GET "http://localhost:8000/predictions/history" \
+  -H "Authorization: Bearer <token>"
+```
+
+_Pour plus d'exemples, voir la [Documentation Swagger](http://localhost:8000/docs) et la [Démo Gradio](https://barbaradi-futurisys-attrition.hf.space/demo)_
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- ARCHITECTURE -->
+## Architecture
+
+### Structure du projet
+
+```
+projet-ml-fastapi/
+├── app/
+│   ├── main.py              # Endpoints FastAPI + routing
+│   ├── auth.py              # Authentification JWT (OAuth2)
+│   ├── database.py          # Connexion SQLAlchemy + session
+│   ├── predict.py           # Logique ML (filtrage SQL, encoding, prédiction, logging)
+│   ├── features.py          # Feature engineering (job_changing, feat_junior_poste_risque)
+│   └── schemas.py           # Modèles Pydantic v2 (validation I/O)
+├── database/
+│   ├── create_db.py         # Création des tables + modèles ORM
+│   └── init_data.py         # Insertion des données initiales
+├── ml_model/
+│   └── model_pipeline.pkl   # Pipeline Random Forest sérialisé (joblib)
+├── gradio_demo/
+│   └── app.py               # Interface démo Gradio (HF Spaces)
+├── tests/
+│   ├── conftest.py          # Fixtures pytest (client, db SQLite in-memory, token)
+│   ├── test_routes.py       # Tests endpoints FastAPI
+│   ├── test_predict.py      # Tests fonctions ML (encode, predict)
+│   └── test_functional.py   # Tests comportementaux (seuils métier, biais)
+├── .github/workflows/ci.yml # Pipeline GitHub Actions
+├── .env.example
+├── pyproject.toml           # Dépendances Poetry
+├── Dockerfile               # Image Docker (HF Spaces, port 7860)
+└── README.md
+```
+
+### Base de données (5 tables)
+
+```
+┌──────────────────────────────────┐
+│  USERS (authentification API)    │
+│  id PK | username                │
+│  hashed_password | is_active     │
+└──────────────────────────────────┘
+
+SIRH ──────┐
+           ├── jointure sur id_employee
+EVALUATION ┤
+           │                     ┌──────────────────────────────────┐
+SONDAGE ───┘── 1 employé         │ PREDICTIONS (logging API)         │
+               a N predictions ──▶ id PK | employee_id FK            │
+                                 │ prediction | probability          │
+                                 │ risk_level | filter_used (JSON)   │
+                                 │ created_at                        │
+                                 └──────────────────────────────────┘
+```
+
+> **Note SQL :** `heure_supplementaires` appartient à la table `evaluation` (alias `e.`), pas à `sirh`.
+
+### Choix techniques justifiés
+
+| Choix | Justification |
+|-------|---------------|
+| **FastAPI** | Validation Pydantic automatique, Swagger intégré, async performant |
+| **PostgreSQL** | Relationnel robuste, jointures multi-tables pour données RH |
+| **JWT Bearer** | Standard OAuth2, stateless, compatible tous clients HTTP |
+| **SQLite en CI** | Évite la dépendance PostgreSQL dans GitHub Actions |
+| **Gradio imports directs** | Évite deadlocks uvicorn 1 worker — appels Python vs HTTP interne |
+| **Orphan branch HF deploy** | Évite que les binaires (.pkl) bloquent l'historique Git |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- ML MODEL -->
+## ML Model
+
+### Comparaison des modèles (métrique prioritaire : Recall)
+
+> Un faux négatif = un employé qui part sans détection préalable → coût élevé (recrutement, formation).
+
+| Modèle | Recall | Precision | F1-Score |
+|--------|--------|-----------|----------|
+| Logistic Regression | 74.5% | 38.9% | 51.1% |
+| **Random Forest ✅** | **61.7%** | **42.0%** | **50.0%** |
+| XGBoost | 31.9% | 51.7% | 39.5% |
+| CatBoost | 40.4% | 45.2% | 42.7% |
+| Dummy (baseline) | 12.8% | 12.2% | 12.5% |
+
+**Pourquoi Random Forest ?** Meilleur équilibre Recall/Precision, robuste au déséquilibre de classes (16%/84%), interprétable via SHAP TreeExplainer.
+
+### Paramètres optimaux — GridSearchCV (180 entraînements, 36 combinaisons × 5 validations)
+
+```python
+best_params = {
+    'n_estimators': 200,       # 200 arbres votent ensemble
+    'max_depth': 3,            # Arbres simples → évite l'overfitting
+    'min_samples_leaf': 15,    # Min 15 employés par feuille de décision
+    'class_weight': 'balanced' # Compense le déséquilibre des classes
+}
+```
+
+### Features engineered (`app/features.py`)
+
+* `job_changing` — `nombre_experiences_precedentes >= 4` ET `annee_experience_totale <= 6`
+* `feat_junior_poste_risque` — croisement rôle × niveau d'expérience
+
+### Mise à jour du modèle
+
+```sh
+# 1. Ré-entraîner (notebook P4)
+# 2. Sérialiser le nouveau pipeline
+python -c "import joblib; joblib.dump(pipeline, 'ml_model/model_pipeline.pkl')"
+# 3. Valider les tests fonctionnels
+pytest tests/test_functional.py -v
+# 4. PR → develop → main → CI redéploie automatiquement
+```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- TESTS -->
+## Tests
+
+```sh
+# Tous les tests
 pytest
 
 # Avec rapport de couverture
-pytest --cov=app --cov-report=html
+pytest --cov=app --cov-report=term-missing
 
-# Le rapport HTML est généré dans htmlcov/index.html
+# Tests fonctionnels uniquement
+pytest tests/test_functional.py -v
 ```
 
-Les tests couvrent :
-- **Tests fonctionnels :** tous les endpoints (200, 401, 404, 422)
-- **Tests authentification :** token valide, expiré, invalide
-- **Tests base de données :** intégrité des données, requêtes CRUD
+### Organisation
 
----
+| Fichier | Type | Ce qui est testé |
+|---------|------|-----------------|
+| `test_routes.py` | Unitaire | Endpoints FastAPI — codes 200, 400, 401, 404, structure JSON |
+| `test_predict.py` | Unitaire | Fonctions ML — `encode_employee_data`, `predict_employees` |
+| `test_functional.py` | Fonctionnel | Comportement métier — seuil `job_changing`, `feat_junior_poste_risque`, impact heures sup |
 
-## ⚙️ CI/CD — GitHub Actions
+### Couverture — 91% (71 tests passants)
 
-Le pipeline `.github/workflows/ci.yml` s'exécute à chaque push/PR sur `main` et `develop`.
+| Fichier | Statements | Couverture |
+|---------|-----------|-----------|
+| `app/auth.py` | 48 | 96% |
+| `app/main.py` | 76 | 97% |
+| `app/predict.py` | 44 | 100% |
+| `app/schemas.py` | 72 | 82% |
+| `app/features.py` | 29 | 79% |
+| `app/database.py` | 20 | 50% |
+| **Total** | **291** | **91%** |
 
-**Étapes automatisées :**
-1. Installation des dépendances Poetry
-2. Exécution des tests Pytest
-3. Génération du rapport de couverture
-4. (optionnel) Déploiement si tous les tests passent
+> `app/database.py` à 50% : la fonction `get_db` n'est pas appelée directement en CI (SQLite in-memory injecté via fixtures). Ce n'est pas un défaut de test — c'est une contrainte d'architecture CI/CD volontaire.
 
----
+> **CI :** les tests utilisent SQLite in-memory — aucune dépendance PostgreSQL dans le pipeline.
 
-## 📊 Processus de Stockage des Données
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-**Données source :** Les 3 fichiers CSV (SIRH, EVAL, SONDAGE) sont chargés en base via `init_data.py` — lecture unique au démarrage.
 
-**Logging des prédictions :** Chaque prédiction est automatiquement loggée dans la table `predictions` avec timestamp — permet l'audit et le suivi des alertes RH dans le temps.
 
-**Côté analytique :** La table `predictions` peut alimenter un tableau de bord RH pour suivre l'évolution du risque par département, poste ou période.
+<!-- CICD -->
+## CI/CD
 
----
+Le pipeline GitHub Actions se déclenche sur push vers `develop` et `main` :
 
-## 📝 Auteur
+1. Checkout + setup Python 3.12
+2. `poetry install`
+3. `pytest --cov=app` (SQLite in-memory, `SECRET_KEY` en secret GitHub)
+4. ✅ Tests OK → déploiement automatique sur Hugging Face Spaces
 
-**Barbara Di Battista**  
-Projet P5 — Déploiement ML — Parcours IA Engineer — OpenClassrooms
+**Déploiement HF Spaces** (pattern orphan branch — évite l'historique binaire) :
+```sh
+git checkout --orphan hf-deploy
+git add .
+git commit -m "deploy: vX.Y.Z"
+git push hf main --force
+git checkout ma-branche && git branch -D hf-deploy
+```
 
-## 📄 Licence
+| Secret GitHub | Usage |
+|---------------|-------|
+| `SECRET_KEY` | Clé JWT (jamais en dur dans le code) |
+| `HF_TOKEN` | Token Hugging Face pour le déploiement |
 
-Projet académique — Usage éducatif uniquement
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- ROADMAP -->
+## Roadmap
+
+- [x] API FastAPI avec endpoints prédiction + historique
+- [x] Authentification JWT sécurisée
+- [x] Base de données PostgreSQL (5 tables)
+- [x] Tests unitaires & fonctionnels
+- [x] Pipeline CI/CD GitHub Actions
+- [x] Démo Gradio sur Hugging Face Spaces
+- [x] Tests fonctionnels comportementaux (job_changing, junior_poste_risque, heures sup)
+- [x] README complet
+- [x] Documentation technique MkDocs
+- [ ] Dashboard monitoring (data drift)
+- [ ] Rate limiting sur les endpoints
+
+Voir les [issues ouvertes](https://github.com/dibattista/projet-ml-fastapi/issues) pour la liste complète.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- CONTRIBUTING -->
+## Contributing
+
+1. Fork le projet
+2. Créer une feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commiter les changements (`git commit -m 'Add some AmazingFeature'`)
+4. Pousser la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrir une Pull Request
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- LICENSE -->
+## License
+
+Distribué sous licence MIT. Voir `LICENSE.txt` pour plus d'informations.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- CONTACT -->
+## Contact
+
+**Barbara Di Battista** — Étudiante AI Engineering (OpenClassrooms)
+
+[![LinkedIn][linkedin-shield]][linkedin-url]
+
+Lien projet : [https://github.com/dibattista/projet-ml-fastapi](https://github.com/dibattista/projet-ml-fastapi)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+<!-- DOCUMENTATION -->
+## Documentation
+
+La documentation technique complète est disponible via MkDocs :
+```bash
+# Lancer la doc en local
+mkdocs serve
+# → http://localhost:8000/projet-ml-fastapi/
+```
+
+| Page | Contenu |
+|------|---------|
+| [Accueil](docs/index.md) | Architecture globale, stack technique |
+| [Installation](docs/installation.md) | Local, Supabase, HF Spaces |
+| [API Reference](docs/api.md) | Endpoints, exemples curl, codes HTTP |
+| [Modèle ML](docs/modele.md) | Random Forest, GridSearch, features |
+| [Tests](docs/tests.md) | Couverture 91%, organisation |
+| [CI/CD](docs/cicd.md) | GitHub Actions, orphan branch, Git Flow |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- ACKNOWLEDGMENTS -->
+## Acknowledgments
+
+* [FastAPI](https://fastapi.tiangolo.com) — framework API moderne
+* [Best-README-Template](https://github.com/othneildrew/Best-README-Template) — structure de ce README
+* [Shields.io](https://shields.io) — badges dynamiques
+* [Hugging Face Spaces](https://huggingface.co/spaces) — hébergement démo gratuit
+* [Supabase](https://supabase.com) — PostgreSQL managé en cloud
+* [OpenClassrooms](https://openclassrooms.com) — programme AI Engineer
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+[contributors-shield]: https://img.shields.io/github/contributors/dibattista/projet-ml-fastapi.svg?style=for-the-badge
+[contributors-url]: https://github.com/dibattista/projet-ml-fastapi/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/dibattista/projet-ml-fastapi.svg?style=for-the-badge
+[forks-url]: https://github.com/dibattista/projet-ml-fastapi/network/members
+[stars-shield]: https://img.shields.io/github/stars/dibattista/projet-ml-fastapi.svg?style=for-the-badge
+[stars-url]: https://github.com/dibattista/projet-ml-fastapi/stargazers
+[issues-shield]: https://img.shields.io/github/issues/dibattista/projet-ml-fastapi.svg?style=for-the-badge
+[issues-url]: https://github.com/dibattista/projet-ml-fastapi/issues
+[license-shield]: https://img.shields.io/github/license/dibattista/projet-ml-fastapi.svg?style=for-the-badge
+[license-url]: https://github.com/dibattista/projet-ml-fastapi/blob/main/LICENSE.txt
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[linkedin-url]: https://linkedin.com/in/barbara-di-battista
+
+[FastAPI-badge]: https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white
+[FastAPI-url]: https://fastapi.tiangolo.com
+[Python-badge]: https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white
+[Python-url]: https://python.org
+[PostgreSQL-badge]: https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white
+[PostgreSQL-url]: https://www.postgresql.org
+[sklearn-badge]: https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white
+[sklearn-url]: https://scikit-learn.org
+[Pytest-badge]: https://img.shields.io/badge/Pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white
+[Pytest-url]: https://pytest.org
+[Docker-badge]: https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white
+[Docker-url]: https://docker.com
+[GHA-badge]: https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white
+[GHA-url]: https://github.com/features/actions
+[HF-badge]: https://img.shields.io/badge/🤗_Hugging_Face-FFD21E?style=for-the-badge
+[HF-url]: https://huggingface.co/spaces/barbaradi/futurisys-attrition
+[product-screenshot]: images/HF-app.png
+[swagger-screenshot]: images/swagger.png

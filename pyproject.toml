@@ -53,6 +53,7 @@ gradio = "^6.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest-cov = "^7.0.0"
+mkdocs-material = "^9.7.6"
 
 [build-system]
 requires = ["poetry-core"]
