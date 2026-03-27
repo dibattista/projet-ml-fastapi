@@ -4,7 +4,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 # 1 - Chargement du modèle une seule fois au démarrage
-model = joblib.load("ml_model/model_pipeline.pkl")
+model = None
+
+def get_model():
+    global model
+    if model is None:
+        model = joblib.load("ml_model/model_pipeline.pkl")
+    return model
 
 
 # 2 — Jointure des 3 tables sources
@@ -106,8 +112,8 @@ def predict_employees(df_encoded: pd.DataFrame) -> pd.DataFrame:
     df_model = df_encoded.drop(columns=["id_employee"])
 
     # Prédiction + probabilité
-    predictions = model.predict(df_model)
-    probabilities = model.predict_proba(df_model)[:, 1]  # proba de "Part"
+    predictions = get_model().predict(df_model)
+    probabilities = get_model().predict_proba(df_model)[:, 1]
 
     # Construire le résultat
     results = pd.DataFrame({
