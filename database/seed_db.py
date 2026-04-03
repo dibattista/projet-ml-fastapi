@@ -4,7 +4,7 @@ Lit les 3 CSV bruts du P4.
 """
 import os
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 
 def seed_database():
@@ -24,24 +24,43 @@ def seed_database():
     # Table 1 : sirh
     # ============================================
     df_sirh = pd.read_csv("notebooks/data/extrait_sirh.csv")
-    df_sirh.to_sql("sirh", engine, if_exists="append", index=False)
-    print(f"sirh : {len(df_sirh)} lignes insérées")
+    with engine.connect() as conn:
+        count = conn.execute(text("SELECT COUNT(*) FROM sirh")).scalar()
+    if count > 0:
+        print(f"sirh : {count} lignes déjà présentes, insertion ignorée ✓")
+    else:
+        df_sirh.to_sql("sirh", engine, if_exists="append", index=False)
+        print(f"sirh : {len(df_sirh)} lignes insérées ✓")
 
     # ============================================
     # Table 2 : evaluation
     # Conversion eval_number : "E_42" → 42
     # ============================================
     df_eval = pd.read_csv("notebooks/data/extrait_eval.csv")
-    df_eval["eval_number"] = df_eval["eval_number"].str.replace("E_", "").astype(int)
-    df_eval.to_sql("evaluation", engine, if_exists="append", index=False)
-    print(f"evaluation : {len(df_eval)} lignes insérées")
+
+    with engine.connect() as conn:
+        count = conn.execute(text("SELECT COUNT(*) FROM evaluation")).scalar()
+    if count > 0:
+        print(f"eval_number : {count} lignes déjà présentes, insertion ignorée ✓")
+    else:
+        df_eval["eval_number"] = df_eval["eval_number"].str.replace("E_", "").astype(int)
+        df_eval.to_sql("evaluation", engine, if_exists="append", index=False)
+        print(f"evaluation : {len(df_eval)} lignes insérées")
+
 
     # ============================================
     # Table 3 : sondage
     # ============================================
     df_sondage = pd.read_csv("notebooks/data/extrait_sondage.csv")
-    df_sondage.to_sql("sondage", engine, if_exists="append", index=False)
-    print(f"sondage : {len(df_sondage)} lignes insérées")
+
+    with engine.connect() as conn:
+        count = conn.execute(text("SELECT COUNT(*) FROM sondage")).scalar()
+    if count > 0:
+        print(f"extrait_sondage : {count} lignes déjà présentes, insertion ignorée ✓")
+    else:
+        df_sondage.to_sql("sondage", engine, if_exists="append", index=False)
+        print(f"sondage : {len(df_sondage)} lignes insérées")
+
 
     print("\nToutes les données insérées avec succès !")
 
