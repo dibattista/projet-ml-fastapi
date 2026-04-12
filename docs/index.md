@@ -2,7 +2,7 @@
 
 !!! info "Projet P5 — OpenClassrooms AI Engineer"
     POC développé pour **TechNova Partners** dans le cadre du programme AI Engineer.  
-    Version actuelle : **v1.5.0**
+    Version actuelle : **v1.6.1**
 
 ---
 

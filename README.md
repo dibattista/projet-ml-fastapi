@@ -160,7 +160,6 @@
    ```
    * API : `http://localhost:8000`
    * Swagger UI : `http://localhost:8000/docs`
-   * ReDoc : `http://localhost:8000/redoc`
 
 7. Mettre à jour l'URL remote Git
    ```sh
@@ -186,11 +185,12 @@
 ## Usage
 
 ### 1. Authentification (obligatoire)
+ Les credentials de démonstration sont disponibles sur demande auprès de l'auteur.
 
 ```bash
 curl -X POST "http://localhost:8000/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=admin&password=secret"
+  -d "username=<your_username>&password=<your_password>"
 ```
 
 Réponse → utiliser `access_token` dans le header de toutes les requêtes :
@@ -391,7 +391,7 @@ pytest tests/test_functional.py -v
 | `test_predict.py` | Unitaire | Fonctions ML — `encode_employee_data`, `predict_employees` |
 | `test_functional.py` | Fonctionnel | Comportement métier — seuil `job_changing`, `feat_junior_poste_risque`, impact heures sup |
 
-### Couverture — 91% (71 tests passants)
+### Couverture — 87% (71 tests passants)
 
 | Fichier | Statements | Couverture |
 |---------|-----------|-----------|
@@ -401,7 +401,7 @@ pytest tests/test_functional.py -v
 | `app/schemas.py` | 72 | 82% |
 | `app/features.py` | 29 | 79% |
 | `app/database.py` | 20 | 50% |
-| **Total** | **291** | **91%** |
+| **Total** | **950** | **87%** |
 
 > `app/database.py` à 50% : la fonction `get_db` n'est pas appelée directement en CI (SQLite in-memory injecté via fixtures). Ce n'est pas un défaut de test — c'est une contrainte d'architecture CI/CD volontaire.
 
@@ -463,11 +463,19 @@ Voir les [issues ouvertes](https://github.com/dibattista/projet-ml-fastapi/issue
 <!-- CONTRIBUTING -->
 ## Contributing
 
+Ce projet suit la méthodologie **Git Flow** :
+- `main` — code stable en production
+- `develop` — intégration des features
+- `feature/*` — développement de nouvelles fonctionnalités
+- `release/*` — préparation des versions
+
 1. Fork le projet
 2. Créer une feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commiter les changements (`git commit -m 'Add some AmazingFeature'`)
 4. Pousser la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
+5. Ouvrir une Pull Request vers `develop`
+
+> 💡 Outil recommandé pour visualiser l'historique Git : [Git Graph (VS Code)](https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
