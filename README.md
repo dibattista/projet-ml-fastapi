@@ -276,8 +276,11 @@ projet-ml-fastapi/
 │   ├── test_routes.py       # Tests endpoints FastAPI
 │   ├── test_predict.py      # Tests fonctions ML (encode, predict)
 │   └── test_functional.py   # Tests comportementaux (seuils métier, biais)
+├── docs/                    # Documentation MkDocs Material (6 pages)
 ├── .github/workflows/ci.yml # Pipeline GitHub Actions
 ├── .env.example
+├── mkdocs.yml               # Configuration MkDocs
+├── deploy_hf.sh             # Script déploiement Hugging Face Spaces
 ├── pyproject.toml           # Dépendances Poetry
 ├── Dockerfile               # Image Docker (HF Spaces, port 7860)
 └── README.md
@@ -421,14 +424,26 @@ Le pipeline GitHub Actions se déclenche sur push vers `develop` et `main` :
 3. `pytest --cov=app` (SQLite in-memory, `SECRET_KEY` en secret GitHub)
 4. ✅ Tests OK → déploiement automatique sur Hugging Face Spaces
 
-**Déploiement HF Spaces** (pattern orphan branch — évite l'historique binaire) :
-```sh
-git checkout --orphan hf-deploy
-git add .
-git commit -m "deploy: vX.Y.Z"
-git push hf main --force
-git checkout ma-branche && git branch -D hf-deploy
+## Déploiement Hugging Face Spaces
+
+Le déploiement sur HF Spaces se fait via le script automatisé :
+
+```bash
+# Depuis develop (par défaut)
+bash deploy_hf.sh
+
+# Depuis main
+bash deploy_hf.sh main
 ```
+
+Le script :
+- Crée une branche orphan propre
+- Sélectionne uniquement les fichiers nécessaires
+- Génère le README HF automatiquement
+- Push vers HF Spaces
+- Nettoie automatiquement
+
+**Fichiers déployés :** app/, gradio_demo/, ml_model/, database/, Dockerfile, requirements.txt
 
 | Secret GitHub | Usage |
 |---------------|-------|
