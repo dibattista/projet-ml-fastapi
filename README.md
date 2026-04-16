@@ -160,7 +160,6 @@
    ```
    * API : `http://localhost:8000`
    * Swagger UI : `http://localhost:8000/docs`
-   * ReDoc : `http://localhost:8000/redoc`
 
 7. Mettre à jour l'URL remote Git
    ```sh
@@ -186,11 +185,12 @@
 ## Usage
 
 ### 1. Authentification (obligatoire)
+ Les credentials de démonstration sont disponibles sur demande auprès de l'auteur.
 
 ```bash
 curl -X POST "http://localhost:8000/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=admin&password=secret"
+  -d "username=<your_username>&password=<your_password>"
 ```
 
 Réponse → utiliser `access_token` dans le header de toutes les requêtes :
@@ -276,8 +276,11 @@ projet-ml-fastapi/
 │   ├── test_routes.py       # Tests endpoints FastAPI
 │   ├── test_predict.py      # Tests fonctions ML (encode, predict)
 │   └── test_functional.py   # Tests comportementaux (seuils métier, biais)
+├── docs/                    # Documentation MkDocs Material (6 pages)
 ├── .github/workflows/ci.yml # Pipeline GitHub Actions
 ├── .env.example
+├── mkdocs.yml               # Configuration MkDocs
+├── deploy_hf.sh             # Script déploiement Hugging Face Spaces
 ├── pyproject.toml           # Dépendances Poetry
 ├── Dockerfile               # Image Docker (HF Spaces, port 7860)
 └── README.md
@@ -391,7 +394,7 @@ pytest tests/test_functional.py -v
 | `test_predict.py` | Unitaire | Fonctions ML — `encode_employee_data`, `predict_employees` |
 | `test_functional.py` | Fonctionnel | Comportement métier — seuil `job_changing`, `feat_junior_poste_risque`, impact heures sup |
 
-### Couverture — 91% (71 tests passants)
+### Couverture — 87% (71 tests passants)
 
 | Fichier | Statements | Couverture |
 |---------|-----------|-----------|
@@ -401,7 +404,7 @@ pytest tests/test_functional.py -v
 | `app/schemas.py` | 72 | 82% |
 | `app/features.py` | 29 | 79% |
 | `app/database.py` | 20 | 50% |
-| **Total** | **291** | **91%** |
+| **Total** | **950** | **87%** |
 
 > `app/database.py` à 50% : la fonction `get_db` n'est pas appelée directement en CI (SQLite in-memory injecté via fixtures). Ce n'est pas un défaut de test — c'est une contrainte d'architecture CI/CD volontaire.
 
@@ -421,14 +424,26 @@ Le pipeline GitHub Actions se déclenche sur push vers `develop` et `main` :
 3. `pytest --cov=app` (SQLite in-memory, `SECRET_KEY` en secret GitHub)
 4. ✅ Tests OK → déploiement automatique sur Hugging Face Spaces
 
-**Déploiement HF Spaces** (pattern orphan branch — évite l'historique binaire) :
-```sh
-git checkout --orphan hf-deploy
-git add .
-git commit -m "deploy: vX.Y.Z"
-git push hf main --force
-git checkout ma-branche && git branch -D hf-deploy
+## Déploiement Hugging Face Spaces
+
+Le déploiement sur HF Spaces se fait via le script automatisé :
+
+```bash
+# Depuis develop (par défaut)
+bash deploy_hf.sh
+
+# Depuis main
+bash deploy_hf.sh main
 ```
+
+Le script :
+- Crée une branche orphan propre
+- Sélectionne uniquement les fichiers nécessaires
+- Génère le README HF automatiquement
+- Push vers HF Spaces
+- Nettoie automatiquement
+
+**Fichiers déployés :** app/, gradio_demo/, ml_model/, database/, Dockerfile, requirements.txt
 
 | Secret GitHub | Usage |
 |---------------|-------|
@@ -463,11 +478,19 @@ Voir les [issues ouvertes](https://github.com/dibattista/projet-ml-fastapi/issue
 <!-- CONTRIBUTING -->
 ## Contributing
 
+Ce projet suit la méthodologie **Git Flow** :
+- `main` — code stable en production
+- `develop` — intégration des features
+- `feature/*` — développement de nouvelles fonctionnalités
+- `release/*` — préparation des versions
+
 1. Fork le projet
 2. Créer une feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commiter les changements (`git commit -m 'Add some AmazingFeature'`)
 4. Pousser la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
+5. Ouvrir une Pull Request vers `develop`
+
+> 💡 Outil recommandé pour visualiser l'historique Git : [Git Graph (VS Code)](https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
