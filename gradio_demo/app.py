@@ -198,7 +198,7 @@ with gr.Blocks(title="Futurisys — Prédiction Attrition") as demo:
         with gr.Row():
             poste_dd = gr.Dropdown(
                 label="Poste",
-                choices=["Tous", "Consultant", "Manager", "Développeur", "Commercial"],
+                choices=["Tous", "Consultant", "Représentant Commercial", "Tech Lead", "Cadre Commercial"],
                 value="Tous",
             )
             nb_exp_slider = gr.Slider(
