@@ -204,6 +204,22 @@ Authorization: Bearer <votre_token>
 |-------------|-----------|
 | [![Demo][product-screenshot]](https://barbaradi-futurisys-attrition.hf.space/demo) | [![Swagger][swagger-screenshot]](http://localhost:8000/docs) |
 
+### Interface Gradio — Démo no-code
+
+La démo est construite avec **Gradio Blocks**, thème **Glass**, et organisée en 4 onglets :
+
+| Onglet | Description |
+|--------|-------------|
+| 🔐 **Connexion** | Authentification par nom d'utilisateur / mot de passe. Le token de session est conservé en `gr.State` pour toutes les actions suivantes. |
+| 🔍 **Prédiction par filtre** | Filtres combinables (poste, heures supplémentaires, nb expériences, années d'expérience). Les résultats s'affichent sous forme de **deux KPI cards HTML** côte à côte : total d'employés analysés (bleu) et nombre + pourcentage à risque (orange/rouge), suivis du détail JSON. |
+| 👤 **Prédiction par employé** | Saisie d'un ID employé. Affiche une fiche HTML avec jauge de risque de départ, jauge de probabilité de rester, et verdict coloré (🔴 / 🟢). |
+| 📋 **Historique** | Charge les N dernières prédictions loguées en base, affichées en tableau JSON. |
+
+**Choix de design :**
+- Thème `gr.themes.Glass()` pour l'aspect visuel translucide
+- KPI cards avec `backdrop-filter: blur` et semi-transparence pour s'intégrer au thème Glass
+- Les messages d'erreur et d'état retournent du HTML coloré cohérent avec la palette
+
 ### 2. Prédiction par filtre — `GET /predict/filter`
 
 Au moins un filtre requis (sinon `400 Bad Request`).
@@ -476,21 +492,115 @@ Voir les [issues ouvertes](https://github.com/dibattista/projet-ml-fastapi/issue
 
 
 <!-- CONTRIBUTING -->
-## Contributing
+## Workflow de développement
 
-Ce projet suit la méthodologie **Git Flow** :
-- `main` — code stable en production
-- `develop` — intégration des features
-- `feature/*` — développement de nouvelles fonctionnalités
-- `release/*` — préparation des versions
+Ce projet suit la méthodologie **Git Flow** avec les branches suivantes :
 
-1. Fork le projet
-2. Créer une feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commiter les changements (`git commit -m 'Add some AmazingFeature'`)
-4. Pousser la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request vers `develop`
+* `main` — code stable en production (versions taguées)
+* `develop` — intégration continue des features
+* `feature/*` — développement de nouvelles fonctionnalités
+* `release/*` — préparation des versions stables
 
-> 💡 Outil recommandé pour visualiser l'historique Git : [Git Graph (VS Code)](https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph)
+### Créer une nouvelle feature
+
+```bash
+# 1. Se placer sur develop
+git checkout develop
+git pull origin develop
+
+# 2. Créer la feature branch
+git flow feature start nom-feature
+
+# 3. Développer et commiter régulièrement
+git add .
+git commit -m "feat: description de la fonctionnalité"
+
+# 4. Merger dans develop (merge manuel avec --no-ff)
+git checkout develop
+git merge feature/nom-feature --no-ff
+
+# 5. Pousser develop ET la feature branch
+git push origin develop
+git push origin feature/nom-feature
+```
+
+> **Note :** Les branches features sont conservées pour traçabilité et visualisation de l'historique.
+
+### Créer une release
+
+Quand plusieurs features sont prêtes pour une version stable :
+
+```bash
+# 1. Supprimer l'ancienne release si elle existe
+git branch -D release/vX.X.X
+git push origin --delete release/vX.X.X
+
+# 2. Créer la nouvelle release depuis develop
+git flow release start vX.Y.Z
+
+# 3. Merger dans main
+git checkout main
+git merge release/vX.Y.Z --no-ff
+git push origin main
+
+# 4. Créer et pousser le tag
+git tag -a vX.Y.Z -m "Release vX.Y.Z - Description"
+git push origin vX.Y.Z
+
+# 5. Synchroniser develop
+git checkout develop
+git merge release/vX.Y.Z --no-ff
+git push origin develop
+
+# 6. Pousser la branche release
+git push origin release/vX.Y.Z
+```
+
+**Semantic Versioning :**
+- `vX.0.0` — Breaking changes (major)
+- `vX.Y.0` — Nouvelles fonctionnalités (minor)
+- `vX.Y.Z` — Corrections de bugs (patch)
+
+### Déploiement sur Hugging Face Spaces
+
+Le déploiement se fait via le script automatisé :
+
+```bash
+# Depuis develop (par défaut)
+bash deploy_hf.sh
+
+# Depuis main
+bash deploy_hf.sh main
+
+# Depuis une feature spécifique
+bash deploy_hf.sh feature/nom-feature
+```
+
+**Le script :**
+- Crée une branche orphan propre (sans historique)
+- Sélectionne uniquement les fichiers nécessaires
+- Génère le README Hugging Face automatiquement
+- Push vers HF Spaces avec force
+- Nettoie automatiquement la branche temporaire
+
+**Fichiers déployés :** `app/`, `gradio_demo/`, `ml_model/`, `database/`, `Dockerfile`, `requirements.txt`
+
+**URL de l'application :** https://huggingface.co/spaces/BarbaraDI/futurisys-attrition
+
+### CI/CD
+
+Les tests sont lancés automatiquement via **GitHub Actions** à chaque push sur `develop` ou `main` :
+
+- ✅ Exécution de 62 tests unitaires et fonctionnels
+- ✅ Vérification de la couverture de code
+- ✅ Validation du pipeline ML
+- ✅ Gestion des fichiers binaires avec Git LFS
+
+**Configuration :** `.github/workflows/ci.yml`
+
+### Visualisation Git Flow
+
+L'extension **Git Graph** (VS Code) permet de visualiser l'ensemble des branches, merges et tags pour suivre l'historique du projet.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
