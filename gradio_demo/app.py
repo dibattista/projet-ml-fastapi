@@ -60,7 +60,7 @@ def predict_filter(
 ):
     """Prédiction par filtre — appel direct aux fonctions predict."""
     if not username_state:
-        return "🔒 Connecte-toi d'abord.", None
+        return "<p style='color:#ffab91;'>🔒 Connecte-toi d'abord.</p>", None
 
     # Construire les filtres (ignorer les valeurs vides)
     filters = {}
@@ -74,14 +74,14 @@ def predict_filter(
         filters["annee_experience_totale"] = annee_exp
 
     if not filters:
-        return "⚠️ Sélectionne au moins un filtre.", None
+        return "<p style='color:#ffab91;'>⚠️ Sélectionne au moins un filtre.</p>", None
 
     db = get_db_session()
     try:
         df = get_employee_dataframe(db, filters=filters)
 
         if df.empty:
-            return f"ℹ️ Aucun employé trouvé avec : {filters}", None
+            return f"<p style='color:#90caf9;'>ℹ️ Aucun employé trouvé avec : {filters}</p>", None
 
         df_encoded = encode_employee_data(df)
         results = predict_employees(df_encoded)
@@ -93,11 +93,22 @@ def predict_filter(
         at_risk = len(results[results["prediction"] == "Part"])
         rate = round(at_risk / total * 100, 1)
 
-        summary = f"👥 {total} employés | ⚠️ {at_risk} à risque ({rate}%)"
-        return summary, results[["employee_id", "prediction", "probability"]].to_dict("records")
+        kpi_html = f"""
+<div style="display:flex;gap:20px;margin:12px 0;">
+  <div style="flex:1;background:rgba(30,80,160,0.35);border:1px solid rgba(80,140,255,0.4);border-radius:14px;padding:24px 20px;text-align:center;backdrop-filter:blur(8px);">
+    <div style="font-size:13px;color:#90caf9;margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase;">Employés analysés</div>
+    <div style="font-size:52px;font-weight:800;color:#e3f2fd;line-height:1;">{total}</div>
+  </div>
+  <div style="flex:1;background:rgba(160,50,20,0.35);border:1px solid rgba(255,120,60,0.45);border-radius:14px;padding:24px 20px;text-align:center;backdrop-filter:blur(8px);">
+    <div style="font-size:13px;color:#ffab91;margin-bottom:8px;letter-spacing:0.05em;text-transform:uppercase;">À risque de départ</div>
+    <div style="font-size:52px;font-weight:800;color:#fbe9e7;line-height:1;">{at_risk}</div>
+    <div style="font-size:18px;color:#ff8a65;margin-top:6px;font-weight:600;">{rate} %</div>
+  </div>
+</div>"""
+        return kpi_html, results[["employee_id", "prediction", "probability"]].to_dict("records")
 
     except Exception as e:
-        return f"❌ Erreur : {str(e)}", None
+        return f"<p style='color:#e53935;'>❌ Erreur : {str(e)}</p>", None
     finally:
         db.close()
 
@@ -125,13 +136,34 @@ def predict_employee(employee_id_str: str, username_state: str):
 
         row = results.iloc[0]
         pred = row["prediction"]
-        prob = round(row["probability"] * 100, 1)
+        probability = row["probability"]
+        risk_pct = round(probability * 100, 1)
+        stay_pct = round(100 - risk_pct, 1)
         emoji = "🔴" if pred == "Part" else "🟢"
+        risk_level = "Élevé" if risk_pct >= 70 else "Modéré" if risk_pct >= 40 else "Faible"
 
-        return f"{emoji} Employé {employee_id} — Prédiction : **{pred}** ({prob}%)"
+        html = f"""
+<div style="font-family:sans-serif;color:#e0e0e0;background:#0f0f1e;padding:20px;border-radius:10px;">
+  <p style="margin:0 0 6px;font-size:13px;color:#aaa;">Risque de départ</p>
+  <div style="background:#2a2a3e;border-radius:6px;height:22px;overflow:hidden;margin-bottom:14px;">
+    <div style="width:{risk_pct}%;background:#e53935;height:100%;display:flex;align-items:center;padding-left:8px;font-size:12px;font-weight:bold;color:#fff;box-sizing:border-box;">
+      {risk_pct}%
+    </div>
+  </div>
+  <p style="margin:0 0 6px;font-size:13px;color:#aaa;">Probabilité de rester</p>
+  <div style="background:#2a2a3e;border-radius:6px;height:22px;overflow:hidden;margin-bottom:20px;">
+    <div style="width:{stay_pct}%;background:#43a047;height:100%;display:flex;align-items:center;padding-left:8px;font-size:12px;font-weight:bold;color:#fff;box-sizing:border-box;">
+      {stay_pct}%
+    </div>
+  </div>
+  <p style="margin:0;font-size:15px;font-weight:bold;">
+    {emoji} Verdict : {pred} &mdash; Niveau de risque : {risk_level}
+  </p>
+</div>"""
+        return html
 
     except Exception as e:
-        return f"❌ Erreur : {str(e)}"
+        return f"<p style='color:#e53935;'>❌ Erreur : {str(e)}</p>"
     finally:
         db.close()
 
@@ -170,13 +202,14 @@ def get_history(limit_str: str, username_state: str):
 # ══════════════════════════════════════════════════════════════
 # INTERFACE GRADIO
 # ══════════════════════════════════════════════════════════════
+custom_css =""""""
 
-with gr.Blocks(title="Futurisys — Prédiction Attrition") as demo:
+with gr.Blocks(title="Futurisys — Prédiction Attrition", css=custom_css, theme=gr.themes.Glass()) as demo:
 
     # ── State — stocke le username après login ──
     username_state = gr.State(value=None)
 
-    gr.Markdown("# 🏢 Futurisys — Prédiction Attrition")
+    gr.Markdown("# Futurisys — Prédiction Attrition")
     gr.Markdown("Démo du modèle Random Forest de prédiction de départ d'employés.")
 
     # ── Onglet Login ──────────────────────────────────────────
@@ -216,7 +249,7 @@ with gr.Blocks(title="Futurisys — Prédiction Attrition") as demo:
             )
 
         filter_btn = gr.Button("Lancer la prédiction")
-        filter_summary = gr.Markdown()
+        filter_summary = gr.HTML()
         filter_table = gr.JSON(label="Résultats détaillés")
 
         filter_btn.click(
@@ -229,7 +262,7 @@ with gr.Blocks(title="Futurisys — Prédiction Attrition") as demo:
     with gr.Tab("👤 Prédiction par employé"):
         emp_id_input = gr.Textbox(label="ID Employé", placeholder="Ex: 42")
         emp_btn = gr.Button("Prédire")
-        emp_result = gr.Markdown()
+        emp_result = gr.HTML()
 
         emp_btn.click(
             fn=predict_employee,

@@ -204,6 +204,22 @@ Authorization: Bearer <votre_token>
 |-------------|-----------|
 | [![Demo][product-screenshot]](https://barbaradi-futurisys-attrition.hf.space/demo) | [![Swagger][swagger-screenshot]](http://localhost:8000/docs) |
 
+### Interface Gradio — Démo no-code
+
+La démo est construite avec **Gradio Blocks**, thème **Glass**, et organisée en 4 onglets :
+
+| Onglet | Description |
+|--------|-------------|
+| 🔐 **Connexion** | Authentification par nom d'utilisateur / mot de passe. Le token de session est conservé en `gr.State` pour toutes les actions suivantes. |
+| 🔍 **Prédiction par filtre** | Filtres combinables (poste, heures supplémentaires, nb expériences, années d'expérience). Les résultats s'affichent sous forme de **deux KPI cards HTML** côte à côte : total d'employés analysés (bleu) et nombre + pourcentage à risque (orange/rouge), suivis du détail JSON. |
+| 👤 **Prédiction par employé** | Saisie d'un ID employé. Affiche une fiche HTML avec jauge de risque de départ, jauge de probabilité de rester, et verdict coloré (🔴 / 🟢). |
+| 📋 **Historique** | Charge les N dernières prédictions loguées en base, affichées en tableau JSON. |
+
+**Choix de design :**
+- Thème `gr.themes.Glass()` pour l'aspect visuel translucide
+- KPI cards avec `backdrop-filter: blur` et semi-transparence pour s'intégrer au thème Glass
+- Les messages d'erreur et d'état retournent du HTML coloré cohérent avec la palette
+
 ### 2. Prédiction par filtre — `GET /predict/filter`
 
 Au moins un filtre requis (sinon `400 Bad Request`).
